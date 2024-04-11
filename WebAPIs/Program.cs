@@ -1,3 +1,18 @@
+using Domain.Interfaces.Generics;
+using Domain.Interfaces;
+using Entities.Entities;
+using Infrastructure.Configuration;
+using Infrastructure.Repository.Generics;
+using Infrastructure.Repository.Repositories;
+using Microsoft.EntityFrameworkCore;
+using Domain.Interfaces.InterfaceServices;
+using Domain.Services;
+using AutoMapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using WebAPIs.Models;
+using WebAPIs.Token;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -6,6 +21,68 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+//CONFIG SERVICES
+
+//Conectar com o banco
+builder.Services.AddDbContext<ContextBase>(options =>
+              options.UseSqlServer(
+                  builder.Configuration.GetConnectionString("DefaultConnection")));
+
+//Defini quais os objetos de usuarios vão ser usados custumizados do Identity
+builder.Services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddEntityFrameworkStores<ContextBase>();
+builder.Services.AddControllersWithViews();
+builder.Services.AddRazorPages();
+
+//CONFIG INTERFACES E REPOSITORIOS
+builder.Services.AddSingleton(typeof(IGeneric<>), typeof(RepositoryGenerics<>));
+builder.Services.AddSingleton<IMessage, RepositoryMessage>();
+
+//CONFIG DOMINIO
+builder.Services.AddSingleton<IServiceMessage, ServiceMessage>();
+
+//CONFIG JWT
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+      .AddJwtBearer(option =>
+      {
+          option.TokenValidationParameters = new TokenValidationParameters
+          {
+              ValidateIssuer = false,
+              ValidateAudience = false,
+              ValidateLifetime = true,
+              ValidateIssuerSigningKey = true,
+
+              ValidIssuer = "Teste.Securiry.Bearer",
+              ValidAudience = "Teste.Securiry.Bearer",
+              IssuerSigningKey = JwtSecurityKey.Create("Secret_Key-12345678")
+          };
+
+          option.Events = new JwtBearerEvents
+          {
+              OnAuthenticationFailed = context =>
+              {
+                  Console.WriteLine("OnAuthenticationFailed: " + context.Exception.Message);
+                  return Task.CompletedTask;
+              },
+              OnTokenValidated = context =>
+              {
+                  Console.WriteLine("OnTokenValidated: " + context.SecurityToken);
+                  return Task.CompletedTask;
+              }
+          };
+      });
+
+//CONFIG AUTOMAPPER
+var config = new AutoMapper.MapperConfiguration(cfg =>
+{
+    cfg.CreateMap<MessageViewModel, Message>();
+    cfg.CreateMap<Message, MessageViewModel>();
+});
+
+IMapper mapper = config.CreateMapper();
+builder.Services.AddSingleton(mapper);
+
 
 var app = builder.Build();
 
@@ -16,10 +93,31 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+/*//USADO PARA QUANDO TEMOS DIFERENTES AMBIENTE
+//DESENVOLVIMENTO
+var urlDev = "https://dominiodocliente.com.br";
+//HOMOLOGAÇÃO
+var urlHML = "https://dominiodocliente2.com.br";
+//PRODUÇÃO
+var urlPROD = "https://dominiodocliente3.com.br";
+
+app.UseCors(b => b.WithOrigins(urlDev, urlHML, urlPROD));*/
+
+var devClient = "http://localhost:4200";
+app.UseCors(x => x
+.AllowAnyOrigin()
+.AllowAnyMethod()
+.AllowAnyHeader().WithOrigins(devClient));
+
+
 app.UseHttpsRedirection();
 
+//PARA USAR A AUTENTICAÇÃO DO JWT
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+//USAR O SWAGGER SEM O TOKEN PRA TESTAR
+app.UseSwaggerUI();
 
 app.Run();
