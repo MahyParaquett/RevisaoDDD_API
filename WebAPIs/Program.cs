@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using WebAPIs.Models;
 using WebAPIs.Token;
+using Microsoft.OpenApi.Models;
+using Swashbuckle.AspNetCore.Filters;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +45,18 @@ builder.Services.AddSingleton<IMessage, RepositoryMessage>();
 builder.Services.AddSingleton<IServiceMessage, ServiceMessage>();
 
 //CONFIG JWT
+/*builder.Services.AddSwaggerGen(options =>
+{
+    options.AddSecurityDefinition("oauth2", new OpenApiSecurityScheme
+    {
+        Description = "Standar Authorization header using the Bearer scheme(\"bearer {token}\")",
+        In = ParameterLocation.Header,
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
+    });
+    options.OperationFilter<SecurityRequirementsOperationFilter>();
+});*/
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       .AddJwtBearer(option =>
       {
@@ -103,7 +117,7 @@ var urlPROD = "https://dominiodocliente3.com.br";
 
 app.UseCors(b => b.WithOrigins(urlDev, urlHML, urlPROD));*/
 
-var devClient = "http://localhost:4200";
+var devClient = "http://localhost:7269";
 app.UseCors(x => x
 .AllowAnyOrigin()
 .AllowAnyMethod()
