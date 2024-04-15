@@ -3,6 +3,7 @@ using Entities.Entities;
 using Infrastructure.Configuration;
 using Infrastructure.Repository.Generics;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Infrastructure.Repository.Repositories
 {
@@ -15,5 +16,12 @@ namespace Infrastructure.Repository.Repositories
 
         }
 
+        public async Task<List<Message>> ListarMessage(Expression<Func<Message, bool>> exMessage)
+        {
+            using (var banco = new ContextBase(_OptionsBuilder))
+            {
+                return await banco.Message.Where(exMessage).AsNoTracking().ToListAsync();
+            }
+        }
     }
 }

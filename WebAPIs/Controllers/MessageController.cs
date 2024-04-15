@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using Domain.Interfaces;
+using Domain.Interfaces.InterfaceServices;
 using Entities.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,11 +15,13 @@ namespace WebAPIs.Controllers
     {
         private readonly IMapper _IMapper;
         private readonly IMessage _IMessage;
+        private readonly IServiceMessage _IServiceMessage;
 
-        public MessageController(IMapper IMapper, IMessage IMenssage)
+        public MessageController(IMapper IMapper, IMessage IMenssage, IServiceMessage IServiceMessage)
         {
             _IMapper = IMapper;
             _IMessage = IMenssage;
+            _IServiceMessage = IServiceMessage;
         }
 
 
@@ -29,7 +32,8 @@ namespace WebAPIs.Controllers
         {
             message.UserId = await RetornarIdUsuarioLogado();
             var messageMap = _IMapper.Map<Message>(message);
-            await _IMessage.Add(messageMap);
+            //await _IMessage.Add(messageMap);
+            await _IServiceMessage.Adicionar(messageMap);
             return messageMap.Notificacoes;
         }
 
@@ -38,9 +42,10 @@ namespace WebAPIs.Controllers
         [HttpPut("/api/Update")]
         public async Task<List<Notifies>> Update(MessageViewModel message)
         {
-            var messageMap = _IMapper.Map<Message>(message);
-            await _IMessage.Update(messageMap);
-            return messageMap.Notificacoes;
+           var messageMap = _IMapper.Map<Message>(message);
+           // await _IMessage.Update(messageMap);
+           await _IServiceMessage.Atualizar(messageMap);
+           return messageMap.Notificacoes;
         }
 
         [Authorize]
@@ -69,6 +74,16 @@ namespace WebAPIs.Controllers
         public async Task<List<MessageViewModel>> List()
         {
             var mensagens = await _IMessage.List();
+            var messageMap = _IMapper.Map<List<MessageViewModel>>(mensagens);
+            return messageMap;
+        }
+
+        [Authorize]
+        [Produces("application/json")]
+        [HttpGet("/api/ListarMenssageAtivas")]
+        public async Task<List<MessageViewModel>> ListarMenssageAtivas()
+        {
+            var mensagens = await _IServiceMessage.ListarMenssageAtivas();
             var messageMap = _IMapper.Map<List<MessageViewModel>>(mensagens);
             return messageMap;
         }

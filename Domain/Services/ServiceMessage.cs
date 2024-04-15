@@ -1,5 +1,6 @@
 ﻿using Domain.Interfaces;
 using Domain.Interfaces.InterfaceServices;
+using Entities.Entities;
 
 namespace Domain.Services
 {
@@ -10,6 +11,33 @@ namespace Domain.Services
         public ServiceMessage (IMessage IMessage)
         {
             _IMessage = IMessage;
+        }
+
+        public async Task Adicionar(Message Objeto)
+        {
+            var validaTitulo = Objeto.ValidarPropriedadeString(Objeto.Titulo, "Titulo");
+            if (validaTitulo)
+            {
+                Objeto.DataCadastro = DateTime.Now;
+                Objeto.DataAlteracao = DateTime.Now;
+                Objeto.Ativo = true;
+                await _IMessage.Add(Objeto);
+            }
+        }
+
+        public async Task Atualizar(Message Objeto)
+        {
+            var validaTitulo = Objeto.ValidarPropriedadeString(Objeto.Titulo, "Titulo");
+            if (validaTitulo)
+            {
+                Objeto.DataAlteracao = DateTime.Now;
+                await _IMessage.Update(Objeto);
+            }
+        }
+
+        public async Task<List<Message>> ListarMenssageAtivas()
+        {
+            return await _IMessage.ListarMessage(n => n.Ativo);
         }
     }
 }
