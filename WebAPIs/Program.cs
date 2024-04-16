@@ -14,6 +14,8 @@ using WebAPIs.Models;
 using WebAPIs.Token;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.Filters;
+using Domain.ExternalInterfaces;
+using Infrastructure.ExternalRepositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +42,7 @@ builder.Services.AddRazorPages();
 //CONFIG INTERFACES E REPOSITORIOS
 builder.Services.AddSingleton(typeof(IGeneric<>), typeof(RepositoryGenerics<>));
 builder.Services.AddSingleton<IMessage, RepositoryMessage>();
+builder.Services.AddSingleton<IProduto, RepositoryProduto>();
 
 //CONFIG DOMINIO
 builder.Services.AddSingleton<IServiceMessage, ServiceMessage>();
